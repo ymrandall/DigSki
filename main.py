@@ -6,6 +6,17 @@ from kivy.uix.label import Label
 from kivy.clock import Clock
 import serial
 import time
+
+#define status
+status='unknown'
+
+serialport = serial.Serial(
+    port='/dev/ttyACM0',
+    baudrate = 9600,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    bytesize=serial.EIGHTBITS)
+
 class Interface(Widget):
     def __init__(self, **kwargs):
         super(Interface, self).__init__(**kwargs)
@@ -27,23 +38,31 @@ class StopApp(App):
         startbtn.bind(on_press=self.send_start)
         parent.add_widget(startbtn)   
 
-        #Read
-        readmsg = Button(text='Status',background_color=(1.0, 1.0, 1.0, 1.0),pos=(0,parent.top))
-        parent.add_widget(readmsg)   
-
+        #Display Time of Day Clock
         timeofday = clockupdate(pos=(parent.center_x,200))
         Clock.schedule_interval(timeofday.update, 1)
         parent.add_widget(timeofday)
+        
+        enginestatus =readstatus(pos=(parent.center_x,175))
+        Clock.schedule_interval(enginestatus.check, 1)
+        parent.add_widget(enginestatus)
 
         return parent
     def send_stop(self, obj):
         print('Stop')
-
+        global status
+        status='Engine stopped'
+        serialport.write('stop')
 
     def send_start(self, obj):
         print('Start')
+        global status
+        status=('Engine Running')
 
 
+class readstatus(Label):
+    def check(self, *args):
+        self.text=serialport.readline()
 
 class clockupdate(Label):
     def update(self, *args):
