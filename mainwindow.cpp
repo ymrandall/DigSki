@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "mydialog.h"
+#include "mainwindow.h"
 #include <QTimer>
 #include <QDateTime>
 #include <QSerialPort>
@@ -24,12 +25,14 @@ MainWindow::MainWindow(QWidget *parent) :
     //TEMP DISPLAY
     ui->lcdNumber_TMP->display("------");
 
+
     //serial port
     device = new QSerialPort(this);
     serialBuffer = "";
+    line = "";
 
     //DEBUG SERIAL
-    /*
+/*
      qDebug() << "Number of ports: " << QSerialPortInfo::availablePorts().length() << "\n";
      foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()){
         qDebug() << "Description: " << serialPortInfo.description() << "\n";
@@ -38,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
         qDebug() << "Has product ID? " << serialPortInfo.hasProductIdentifier() << "\n";
         qDebug() << "Product ID: " << serialPortInfo.productIdentifier() << "\n";
      }
-     */
+*/
 
     //Identify available ports
     bool device_available = false;
@@ -58,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if(device_available){
         qDebug() << "Found the device port...\n";
         device -> setPortName(device_port);
-        device -> open(QSerialPort::WriteOnly);
+        device -> open(QSerialPort::ReadOnly);
         device -> setBaudRate(QSerialPort::Baud9600);
         device -> setDataBits(QSerialPort::Data8);
         device -> setFlowControl(QSerialPort::NoFlowControl);
@@ -72,38 +75,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 }
 
-void MainWindow::readSerial()
-{
-    //qDebug() << "serialport works";
-    //qDebug() << serialBuffer;
-
-    QStringList bufferSplit = serialBuffer.split(",");
-    if(bufferSplit.length() < 3){
-        serialData = device -> readAll();
-        serialBuffer += QString::fromStdString(serialData.toStdString());
-    }else{
-        //bufferSplit[1] is a good value
-        qDebug() << bufferSplit;
-        MainWindow::updateLCD(bufferSplit[1]);
-        serialBuffer = "";
-    }
-
-}
-
-void MainWindow::updateLCD(const QString sensor_reading)
-{
-    ui -> lcdNumber_TMP -> display(sensor_reading);
-}
-
-void MainWindow::showTime()
-{
-    QTime time=QTime::currentTime(); //create time
-    QString time_text=time.toString("hh : mm : ss"); //format time
-    ui->DigitalClock->setText(time_text); //make label display time
-    //ui->label_2->setText(name);
-}
-
-
 MainWindow::~MainWindow()
 {
     if(device -> isOpen()){
@@ -111,6 +82,36 @@ MainWindow::~MainWindow()
     }
     delete ui;
 }
+
+void MainWindow::readSerial()
+{
+    serialData = device -> readAll();
+    serialBuffer += QString::fromStdString(serialData.toStdString());
+    QStringList bufferSplit = serialBuffer.split(",");
+    serialBuffer = "";
+    line=bufferSplit[0];
+    MainWindow::updateLCD(bufferSplit[0]);
+    //ui ->lcdNumber_TMP -> display(line);
+}
+
+
+void MainWindow::updateLCD(QString sensor)
+{
+    qDebug() << "What's going on?";
+    qDebug() << sensor;
+    ui->label_5->setText(sensor);
+    ui->lcdNumber_TMP->display(sensor);
+   // ui -> lcdNumber_TMP -> display(sensor);
+}
+
+
+void MainWindow::showTime()
+{
+    QTime time=QTime::currentTime(); //create time
+    QString time_text=time.toString("hh : mm : ss"); //format time
+    ui->DigitalClock->setText(time_text); //make label display time
+}
+
 
 void MainWindow::on_actionNew_Window_triggered()
 {

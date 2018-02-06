@@ -5,6 +5,7 @@
 #include <mydialog.h>
 #include <QString>
 #include <QSerialPort>
+#include <QByteArray>
 
 namespace Ui {
 class MainWindow;
@@ -27,18 +28,18 @@ private slots:
     void readSerial();
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
-
-    void updateLCD(const QString);
+    void updateLCD(QString);
 
 private:
     Ui::MainWindow *ui;
     MyDialog *mDialog;
 
     QSerialPort *device;
-    static const quint16 device_vendor_id = 9025;
-    static const quint16 device_product_id = 67;
+    static const quint16 device_vendor_id = 6790;
+    static const quint16 device_product_id = 29987;
     QByteArray serialData;
     QString serialBuffer;
+    QString line;
 };
 
 #endif // MAINWINDOW_H
