@@ -2,10 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <mydialog.h>
-#include <QString>
-#include <QSerialPort>
-#include <QByteArray>
+
+class QSerialPort;
 
 namespace Ui {
 class MainWindow;
@@ -19,27 +17,20 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-public slots:
-    void onNewTextEntered(const QString &text);
 
+    void updateLCD(QString sensor);
 private slots:
-    void on_actionNew_Window_triggered();
     void showTime();
-    void readSerial();
-    void on_pushButton_clicked();
-    void on_pushButton_2_clicked();
-    void updateLCD(QString);
-
+        void readSerial();
 private:
     Ui::MainWindow *ui;
-    MyDialog *mDialog;
 
-    QSerialPort *device;
-    static const quint16 device_vendor_id = 6790;
-    static const quint16 device_product_id = 29987;
+    QSerialPort* device;
+    QString serialBuffer, line;
+
+    quint16 device_product_id=0x0043;
+    quint16 device_vendor_id=0x2341;
     QByteArray serialData;
-    QString serialBuffer;
-    QString line;
 };
 
 #endif // MAINWINDOW_H

@@ -1,15 +1,13 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "mydialog.h"
-#include "mainwindow.h"
-#include <QTimer>
-#include <QDateTime>
-#include <QSerialPort>
-#include <string>
-#include <QDebug>
-#include <QSerialPortInfo>
-#include <QList>
 
+#include <QSerialPort>
+#include <QSerialPortInfo>
+#include <QTimer>
+#include <QLCDNumber>
+#include <QLabel>
+#include <QDebug>
+#include <QTime>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -19,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //digital clock
     QTimer *timer=new QTimer(this); //for clock
-    connect(timer,SIGNAL(timeout()),this,SLOT(showTime())); //signal/slot, update time
+    connect(timer,&QTimer::timeout,this,&MainWindow::showTime);
     timer->start();
 
     //TEMP DISPLAY
@@ -47,8 +45,9 @@ MainWindow::MainWindow(QWidget *parent) :
     bool device_available = false;
     QString device_port;
 
-    foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()){
+    for(const QSerialPortInfo &serialPortInfo: QSerialPortInfo::availablePorts()){
         if(serialPortInfo.hasProductIdentifier() && serialPortInfo.hasVendorIdentifier()){
+            qDebug()<<serialPortInfo.productIdentifier()<< serialPortInfo.vendorIdentifier();
             if((serialPortInfo.productIdentifier() == device_product_id)
                     && (serialPortInfo.vendorIdentifier() == device_vendor_id)){
                 device_available = true; //device is available on this port
@@ -58,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     //Open port, if available
-    if(device_available){
+   if(device_available){
         qDebug() << "Found the device port...\n";
         device -> setPortName(device_port);
         device -> open(QSerialPort::ReadOnly);
@@ -67,12 +66,10 @@ MainWindow::MainWindow(QWidget *parent) :
         device -> setFlowControl(QSerialPort::NoFlowControl);
         device -> setParity(QSerialPort::NoParity);
         device -> setStopBits(QSerialPort::OneStop);
-        QObject::connect(device, SIGNAL(readyRead()),this,SLOT(readSerial()));
+        connect(device, &QIODevice::readyRead,this,&MainWindow::readSerial);
     }else{
         qDebug() << "Couldn't find the correct port for the device.\n";
-        //QMessageBox::information(this, "Serial Port Error", "Couldn't open serial port to device");
     }
-
 }
 
 MainWindow::~MainWindow()
@@ -87,13 +84,16 @@ void MainWindow::readSerial()
 {
     serialData = device -> readAll();
     serialBuffer += QString::fromStdString(serialData.toStdString());
-    QStringList bufferSplit = serialBuffer.split(",");
-    serialBuffer = "";
-    line=bufferSplit[0];
-    MainWindow::updateLCD(bufferSplit[0]);
-    //ui ->lcdNumber_TMP -> display(line);
-}
+    if(serialBuffer.indexOf("\n")>=0)//find end line
+    {
+        QStringList bufferSplit = serialBuffer.split(",");
+        serialBuffer.clear();
+        line=bufferSplit[0];
+        updateLCD(bufferSplit[0]);
+    }
 
+    //ui->lcdNumber_TMP -> display(line);
+}
 
 void MainWindow::updateLCD(QString sensor)
 {
@@ -101,7 +101,7 @@ void MainWindow::updateLCD(QString sensor)
     qDebug() << sensor;
     ui->label_5->setText(sensor);
     ui->lcdNumber_TMP->display(sensor);
-   // ui -> lcdNumber_TMP -> display(sensor);
+    // ui -> lcdNumber_TMP -> display(sensor);
 }
 
 
@@ -110,27 +110,4 @@ void MainWindow::showTime()
     QTime time=QTime::currentTime(); //create time
     QString time_text=time.toString("hh : mm : ss"); //format time
     ui->DigitalClock->setText(time_text); //make label display time
-}
-
-
-void MainWindow::on_actionNew_Window_triggered()
-{
-    mDialog = new MyDialog(this);
-    mDialog->show();
-}
-
-void MainWindow::on_pushButton_clicked()
-{
-    ui->label->setText("Message sent");
-
-}
-
-void MainWindow::on_pushButton_2_clicked()
-{
-    ui->label->setText("Message sent.");
-}
-
-void MainWindow::onNewTextEntered(const QString &text)
-{
-    ui->label_2->setText(text);
 }
